@@ -3,6 +3,8 @@ package com.hedvig.android.feature.home.home.data
 import arrow.core.Either
 import arrow.core.right
 import com.hedvig.android.apollo.ApolloOperationError
+import com.hedvig.android.core.uidata.UiCurrencyCode
+import com.hedvig.android.core.uidata.UiMoney
 import com.hedvig.android.crosssells.CrossSellSheetData
 import com.hedvig.android.crosssells.RecommendedCrossSell
 import com.hedvig.android.data.contract.CrossSell
@@ -10,6 +12,7 @@ import com.hedvig.android.data.contract.ImageAsset
 import com.hedvig.android.memberreminders.MemberReminders
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.datetime.LocalDate
 
 internal class GetHomeDataUseCaseDemo : GetHomeDataUseCase {
   override fun invoke(forceNetworkFetch: Boolean): Flow<Either<ApolloOperationError, HomeData>> = flowOf(
@@ -54,6 +57,14 @@ internal class GetHomeDataUseCaseDemo : GetHomeDataUseCase {
         ),
       ),
       travelBannerInfo = null,
+      insuranceSummary = InsuranceSummaryData(
+        policies = listOf(
+          PolicyInfo("Home Insurance", "Bellmansgatan 5"),
+          PolicyInfo("Car Insurance", "ABC 123"),
+        ),
+        monthlyCost = UiMoney(499.0, UiCurrencyCode.SEK),
+        nextPaymentDate = LocalDate(2026, 5, 1),
+      ),
     ).right(),
   )
 }

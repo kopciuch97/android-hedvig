@@ -37,6 +37,7 @@ dependencies {
   implementation(projects.coreBuildConstants)
   implementation(projects.coreCommonPublic)
   implementation(projects.coreDemoMode)
+  implementation(projects.coreUiData)
   implementation(projects.coreMarkdown)
   implementation(projects.coreResources)
   implementation(projects.crossSells)

@@ -26,6 +26,8 @@ import com.hedvig.android.apollo.test.TestNetworkTransportType
 import com.hedvig.android.core.common.ErrorMessage
 import com.hedvig.android.core.common.test.isRight
 import com.hedvig.android.core.demomode.DemoManager
+import com.hedvig.android.core.uidata.UiCurrencyCode
+import com.hedvig.android.core.uidata.UiMoney
 import com.hedvig.android.data.addons.data.AddonBannerInfo
 import com.hedvig.android.data.addons.data.AddonBannerSource
 import com.hedvig.android.data.addons.data.GetAddonBannerInfoUseCase
@@ -53,6 +55,8 @@ import octopus.CbmNumberOfChatMessagesQuery
 import octopus.HomeQuery
 import octopus.UnreadMessageCountQuery
 import octopus.type.ChatMessageSender
+import octopus.type.CurrencyCode
+import octopus.type.buildAgreement
 import octopus.type.buildChatMessagePage
 import octopus.type.buildChatMessageText
 import octopus.type.buildClaim
@@ -60,8 +64,11 @@ import octopus.type.buildContract
 import octopus.type.buildConversation
 import octopus.type.buildLinkInfo
 import octopus.type.buildMember
+import octopus.type.buildMemberCharge
 import octopus.type.buildMemberImportantMessage
+import octopus.type.buildMoney
 import octopus.type.buildPendingContract
+import octopus.type.buildProductVariant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -765,6 +772,256 @@ internal class GetHomeUseCaseTest {
         } else {
           isFalse()
         }
+      }
+  }
+
+  @Test
+  fun `two active contracts with futureCharge maps to insuranceSummary with two policies and payment info`() = runTest {
+    val getHomeDataUseCase = testUseCaseWithoutReminders()
+
+    apolloClient.registerTestResponse(
+      HomeQuery(true),
+      HomeQuery.Data(OctopusFakeResolver) {
+        currentMember = buildMember {
+          activeContracts = listOf(
+            buildContract {
+              exposureDisplayName = "Kungsgatan 1"
+              currentAgreement = buildAgreement {
+                productVariant = buildProductVariant {
+                  displayName = "Home Insurance"
+                }
+              }
+            },
+            buildContract {
+              exposureDisplayName = "ABC 123"
+              currentAgreement = buildAgreement {
+                productVariant = buildProductVariant {
+                  displayName = "Car Insurance"
+                }
+              }
+            },
+          )
+          futureCharge = buildMemberCharge {
+            net = buildMoney {
+              amount = 499.0
+              currencyCode = CurrencyCode.SEK
+            }
+            date = LocalDate(2026, 5, 1)
+          }
+        }
+      },
+    )
+    apolloClient.registerTestResponse(
+      UnreadMessageCountQuery(),
+      UnreadMessageCountQuery.Data(OctopusFakeResolver),
+    )
+    apolloClient.registerTestResponse(
+      CbmNumberOfChatMessagesQuery(),
+      CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+    )
+    val result = getHomeDataUseCase.invoke(true).first()
+
+    assertThat(result)
+      .isNotNull()
+      .isRight()
+      .prop(HomeData::insuranceSummary)
+      .isNotNull()
+      .apply {
+        prop(InsuranceSummaryData::policies).containsExactly(
+          PolicyInfo("Home Insurance", "Kungsgatan 1"),
+          PolicyInfo("Car Insurance", "ABC 123"),
+        )
+        prop(InsuranceSummaryData::monthlyCost)
+          .isNotNull()
+          .apply {
+            prop(UiMoney::amount).isEqualTo(499.0)
+            prop(UiMoney::currencyCode).isEqualTo(UiCurrencyCode.SEK)
+          }
+        prop(InsuranceSummaryData::nextPaymentDate).isEqualTo(LocalDate(2026, 5, 1))
+      }
+  }
+
+  @Test
+  fun `zero active contracts results in null insuranceSummary`() = runTest {
+    val getHomeDataUseCase = testUseCaseWithoutReminders()
+
+    apolloClient.registerTestResponse(
+      HomeQuery(true),
+      HomeQuery.Data(OctopusFakeResolver) {
+        currentMember = buildMember {
+          activeContracts = emptyList()
+        }
+      },
+    )
+    apolloClient.registerTestResponse(
+      UnreadMessageCountQuery(),
+      UnreadMessageCountQuery.Data(OctopusFakeResolver),
+    )
+    apolloClient.registerTestResponse(
+      CbmNumberOfChatMessagesQuery(),
+      CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+    )
+    val result = getHomeDataUseCase.invoke(true).first()
+
+    assertThat(result)
+      .isNotNull()
+      .isRight()
+      .prop(HomeData::insuranceSummary)
+      .isNull()
+  }
+
+  @Test
+  fun `active contracts with null futureCharge results in insuranceSummary with null cost and date`() = runTest {
+    val getHomeDataUseCase = testUseCaseWithoutReminders()
+
+    apolloClient.registerTestResponse(
+      HomeQuery(true),
+      HomeQuery.Data(OctopusFakeResolver) {
+        currentMember = buildMember {
+          activeContracts = listOf(
+            buildContract {
+              exposureDisplayName = "Kungsgatan 1"
+              currentAgreement = buildAgreement {
+                productVariant = buildProductVariant {
+                  displayName = "Home Insurance"
+                }
+              }
+            },
+          )
+          futureCharge = null
+        }
+      },
+    )
+    apolloClient.registerTestResponse(
+      UnreadMessageCountQuery(),
+      UnreadMessageCountQuery.Data(OctopusFakeResolver),
+    )
+    apolloClient.registerTestResponse(
+      CbmNumberOfChatMessagesQuery(),
+      CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+    )
+    val result = getHomeDataUseCase.invoke(true).first()
+
+    assertThat(result)
+      .isNotNull()
+      .isRight()
+      .prop(HomeData::insuranceSummary)
+      .isNotNull()
+      .apply {
+        prop(InsuranceSummaryData::policies).hasSize(1)
+        prop(InsuranceSummaryData::monthlyCost).isNull()
+        prop(InsuranceSummaryData::nextPaymentDate).isNull()
+      }
+  }
+
+  @Test
+  fun `single active contract with futureCharge maps correctly`() = runTest {
+    val getHomeDataUseCase = testUseCaseWithoutReminders()
+
+    apolloClient.registerTestResponse(
+      HomeQuery(true),
+      HomeQuery.Data(OctopusFakeResolver) {
+        currentMember = buildMember {
+          activeContracts = listOf(
+            buildContract {
+              exposureDisplayName = "Bellmansgatan 5"
+              currentAgreement = buildAgreement {
+                productVariant = buildProductVariant {
+                  displayName = "Rental Insurance"
+                }
+              }
+            },
+          )
+          futureCharge = buildMemberCharge {
+            net = buildMoney {
+              amount = 199.0
+              currencyCode = CurrencyCode.SEK
+            }
+            date = LocalDate(2026, 6, 15)
+          }
+        }
+      },
+    )
+    apolloClient.registerTestResponse(
+      UnreadMessageCountQuery(),
+      UnreadMessageCountQuery.Data(OctopusFakeResolver),
+    )
+    apolloClient.registerTestResponse(
+      CbmNumberOfChatMessagesQuery(),
+      CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+    )
+    val result = getHomeDataUseCase.invoke(true).first()
+
+    assertThat(result)
+      .isNotNull()
+      .isRight()
+      .prop(HomeData::insuranceSummary)
+      .isNotNull()
+      .apply {
+        prop(InsuranceSummaryData::policies).containsExactly(
+          PolicyInfo("Rental Insurance", "Bellmansgatan 5"),
+        )
+        prop(InsuranceSummaryData::monthlyCost)
+          .isNotNull()
+          .apply {
+            prop(UiMoney::amount).isEqualTo(199.0)
+            prop(UiMoney::currencyCode).isEqualTo(UiCurrencyCode.SEK)
+          }
+        prop(InsuranceSummaryData::nextPaymentDate).isEqualTo(LocalDate(2026, 6, 15))
+      }
+  }
+
+  @Test
+  fun `five active contracts all map to insuranceSummary policies`() = runTest {
+    val getHomeDataUseCase = testUseCaseWithoutReminders()
+
+    apolloClient.registerTestResponse(
+      HomeQuery(true),
+      HomeQuery.Data(OctopusFakeResolver) {
+        currentMember = buildMember {
+          activeContracts = (1..5).map { index ->
+            buildContract {
+              exposureDisplayName = "Address $index"
+              currentAgreement = buildAgreement {
+                productVariant = buildProductVariant {
+                  displayName = "Insurance $index"
+                }
+              }
+            }
+          }
+          futureCharge = buildMemberCharge {
+            net = buildMoney {
+              amount = 999.0
+              currencyCode = CurrencyCode.SEK
+            }
+            date = LocalDate(2026, 7, 1)
+          }
+        }
+      },
+    )
+    apolloClient.registerTestResponse(
+      UnreadMessageCountQuery(),
+      UnreadMessageCountQuery.Data(OctopusFakeResolver),
+    )
+    apolloClient.registerTestResponse(
+      CbmNumberOfChatMessagesQuery(),
+      CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+    )
+    val result = getHomeDataUseCase.invoke(true).first()
+
+    assertThat(result)
+      .isNotNull()
+      .isRight()
+      .prop(HomeData::insuranceSummary)
+      .isNotNull()
+      .apply {
+        prop(InsuranceSummaryData::policies).hasSize(5)
+        prop(InsuranceSummaryData::policies).transform { it.map(PolicyInfo::displayName) }
+          .containsExactly("Insurance 1", "Insurance 2", "Insurance 3", "Insurance 4", "Insurance 5")
+        prop(InsuranceSummaryData::monthlyCost)
+          .isNotNull()
+          .prop(UiMoney::amount).isEqualTo(999.0)
+        prop(InsuranceSummaryData::nextPaymentDate).isEqualTo(LocalDate(2026, 7, 1))
       }
   }
 

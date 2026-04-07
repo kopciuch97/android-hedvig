@@ -159,6 +159,7 @@ internal fun HomeDestination(
   onClaimDetailCardClicked: (String) -> Unit,
   navigateToConnectPayment: () -> Unit,
   navigateToHelpCenter: () -> Unit,
+  navigateToInsurances: () -> Unit,
   openUrl: (String) -> Unit,
   openAppSettings: () -> Unit,
   navigateToMissingInfo: (String, CoInsuredFlowType) -> Unit,
@@ -179,6 +180,7 @@ internal fun HomeDestination(
     onClaimDetailCardClicked = onClaimDetailCardClicked,
     navigateToConnectPayment = navigateToConnectPayment,
     navigateToHelpCenter = navigateToHelpCenter,
+    navigateToInsurances = navigateToInsurances,
     openUrl = openUrl,
     openAppSettings = openAppSettings,
     navigateToMissingInfo = navigateToMissingInfo,
@@ -205,6 +207,7 @@ private fun HomeScreen(
   onClaimDetailCardClicked: (String) -> Unit,
   navigateToConnectPayment: () -> Unit,
   navigateToHelpCenter: () -> Unit,
+  navigateToInsurances: () -> Unit,
   openUrl: (String) -> Unit,
   markMessageAsSeen: (String) -> Unit,
   openAppSettings: () -> Unit,
@@ -271,6 +274,7 @@ private fun HomeScreen(
             onClaimDetailCardClicked = onClaimDetailCardClicked,
             navigateToConnectPayment = navigateToConnectPayment,
             navigateToHelpCenter = navigateToHelpCenter,
+            navigateToInsurances = navigateToInsurances,
             openClaimFlowSheet = startClaimBottomSheetState::show,
             openAppSettings = openAppSettings,
             openUrl = openUrl,
@@ -417,6 +421,7 @@ private fun HomeScreenSuccess(
   onClaimDetailCardClicked: (claimId: String) -> Unit,
   navigateToConnectPayment: () -> Unit,
   navigateToHelpCenter: () -> Unit,
+  navigateToInsurances: () -> Unit,
   openClaimFlowSheet: () -> Unit,
   openAppSettings: () -> Unit,
   openUrl: (String) -> Unit,
@@ -469,6 +474,19 @@ private fun HomeScreenSuccess(
               onClick = onClaimDetailCardClicked,
               claimStatusCardsUiState = uiState.claimStatusCardsData.claimStatusCardsUiState,
               contentPadding = PaddingValues(horizontal = 16.dp) + horizontalInsets,
+            )
+          }
+        },
+        insuranceSummaryCard = {
+          val summaryData = uiState.insuranceSummaryData
+          if (summaryData != null) {
+            InsuranceSummaryCard(
+              data = summaryData,
+              onViewDetailsClick = navigateToInsurances,
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(horizontalInsets),
             )
           }
         },
@@ -783,6 +801,7 @@ private fun PreviewHomeScreen(
             eligibleInsurancesIds = nonEmptyListOf("id"),
             flowType = FlowType.APP_TRAVEL_PLUS_SELL_OR_UPGRADE,
           ),
+          insuranceSummaryData = null,
           isProduction = true,
         ),
         notificationPermissionState = rememberPreviewNotificationPermissionState(),
@@ -793,6 +812,7 @@ private fun PreviewHomeScreen(
         onClaimDetailCardClicked = {},
         navigateToConnectPayment = {},
         navigateToHelpCenter = {},
+        navigateToInsurances = {},
         openUrl = {},
         openAppSettings = {},
         navigateToMissingInfo = { _, _ -> },
@@ -823,6 +843,7 @@ private fun PreviewHomeScreenWithError() {
         onClaimDetailCardClicked = {},
         navigateToConnectPayment = {},
         navigateToHelpCenter = {},
+        navigateToInsurances = {},
         openUrl = {},
         openAppSettings = {},
         navigateToMissingInfo = { _, _ -> },
@@ -864,6 +885,7 @@ private fun PreviewHomeScreenAllHomeTextTypes(
           firstVetAction = null,
           chatAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = true,
         ),
         notificationPermissionState = rememberPreviewNotificationPermissionState(),
@@ -874,6 +896,7 @@ private fun PreviewHomeScreenAllHomeTextTypes(
         onClaimDetailCardClicked = {},
         navigateToConnectPayment = {},
         navigateToHelpCenter = {},
+        navigateToInsurances = {},
         openUrl = {},
         openAppSettings = {},
         navigateToMissingInfo = { _, _ -> },

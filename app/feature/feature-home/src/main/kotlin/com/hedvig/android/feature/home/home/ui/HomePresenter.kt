@@ -16,6 +16,7 @@ import com.hedvig.android.crosssells.CrossSellSheetData
 import com.hedvig.android.data.addons.data.AddonBannerInfo
 import com.hedvig.android.feature.home.home.data.GetHomeDataUseCase
 import com.hedvig.android.feature.home.home.data.HomeData
+import com.hedvig.android.feature.home.home.data.InsuranceSummaryData
 import com.hedvig.android.feature.home.home.data.SeenImportantMessagesStorage
 import com.hedvig.android.memberreminders.MemberReminders
 import com.hedvig.android.molecule.public.MoleculePresenter
@@ -138,6 +139,7 @@ internal class HomePresenter(
           firstVetAction = successData.firstVetAction,
           crossSellsAction = successData.crossSellsAction,
           addonBannerInfo = successData.addonBannerInfo,
+          insuranceSummaryData = successData.insuranceSummaryData,
           isProduction = isProduction,
         )
       }
@@ -175,6 +177,7 @@ internal sealed interface HomeUiState {
     val firstVetAction: HomeTopBarAction.FirstVetAction?,
     val crossSellsAction: HomeTopBarAction.CrossSellsAction?,
     val addonBannerInfo: AddonBannerInfo?,
+    val insuranceSummaryData: InsuranceSummaryData?,
     val isProduction: Boolean,
     override val isHelpCenterEnabled: Boolean,
     override val hasUnseenChatMessages: Boolean,
@@ -196,6 +199,7 @@ private data class SuccessData(
   val crossSellsAction: HomeTopBarAction.CrossSellsAction?,
   val hasUnseenChatMessages: Boolean,
   val addonBannerInfo: AddonBannerInfo?,
+  val insuranceSummaryData: InsuranceSummaryData?,
 ) {
   companion object {
     fun fromLastState(lastState: HomeUiState): SuccessData? {
@@ -211,6 +215,7 @@ private data class SuccessData(
         firstVetAction = lastState.firstVetAction,
         hasUnseenChatMessages = lastState.hasUnseenChatMessages,
         addonBannerInfo = lastState.addonBannerInfo,
+        insuranceSummaryData = lastState.insuranceSummaryData,
       )
     }
 
@@ -257,6 +262,7 @@ private data class SuccessData(
         crossSellsAction = crossSellsAction,
         hasUnseenChatMessages = homeData.hasUnseenChatMessages,
         addonBannerInfo = homeData.travelBannerInfo,
+        insuranceSummaryData = homeData.insuranceSummary,
       )
     }
   }

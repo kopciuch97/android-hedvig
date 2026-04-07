@@ -11,6 +11,7 @@ import com.apollographql.apollo.cache.normalized.FetchPolicy
 import com.apollographql.apollo.cache.normalized.fetchPolicy
 import com.hedvig.android.apollo.ApolloOperationError
 import com.hedvig.android.apollo.safeFlow
+import com.hedvig.android.core.uidata.UiMoney
 import com.hedvig.android.crosssells.BundleProgress
 import com.hedvig.android.crosssells.CrossSellSheetData
 import com.hedvig.android.crosssells.RecommendedCrossSell
@@ -165,6 +166,7 @@ internal class GetHomeDataUseCaseImpl(
             )
           } ?: emptyList()
         val travelBannerInfo = travelBannerInfo.getOrNull()
+        val insuranceSummary = homeQueryData.toInsuranceSummary()
         HomeData(
           contractStatus = contractStatus,
           claimStatusCardsData = homeQueryData.claimStatusCards(),
@@ -176,6 +178,7 @@ internal class GetHomeDataUseCaseImpl(
           firstVetSections = firstVetActions,
           crossSells = crossSells,
           travelBannerInfo = travelBannerInfo?.firstOrNull(), // todo: check for CAR_ADDON LATER!
+          insuranceSummary = insuranceSummary,
         )
       }.onLeft { error: ApolloOperationError ->
         logcat(operationError = error) { "GetHomeDataUseCase failed with $error" }
@@ -265,6 +268,23 @@ internal class GetHomeDataUseCaseImpl(
   }
 }
 
+private fun HomeQuery.Data.toInsuranceSummary(): InsuranceSummaryData? {
+  val activeContracts = currentMember.activeContracts
+  if (activeContracts.isEmpty()) return null
+  val policies = activeContracts.map { contract ->
+    PolicyInfo(
+      displayName = contract.currentAgreement.productVariant.displayName,
+      exposureDisplayName = contract.exposureDisplayName,
+    )
+  }
+  val futureCharge = currentMember.futureCharge
+  return InsuranceSummaryData(
+    policies = policies,
+    monthlyCost = futureCharge?.net?.let { UiMoney.fromMoneyFragment(it) },
+    nextPaymentDate = futureCharge?.date,
+  )
+}
+
 private fun HomeQuery.Data.claimStatusCards(): HomeData.ClaimStatusCardsData? {
   val claimStatusCards: NonEmptyList<ClaimFragment> =
     this.currentMember.claims?.toNonEmptyListOrNull()
@@ -272,6 +292,17 @@ private fun HomeQuery.Data.claimStatusCards(): HomeData.ClaimStatusCardsData? {
       ?: return null
   return HomeData.ClaimStatusCardsData(claimStatusCards.map(ClaimStatusCardUiState::fromClaimStatusCardsQuery))
 }
+
+internal data class InsuranceSummaryData(
+  val policies: List<PolicyInfo>,
+  val monthlyCost: UiMoney?,
+  val nextPaymentDate: LocalDate?,
+)
+
+internal data class PolicyInfo(
+  val displayName: String,
+  val exposureDisplayName: String,
+)
 
 internal data class HomeData(
   val contractStatus: ContractStatus,
@@ -284,6 +315,7 @@ internal data class HomeData(
   val firstVetSections: List<FirstVetSection>,
   val crossSells: CrossSellSheetData,
   val travelBannerInfo: AddonBannerInfo?,
+  val insuranceSummary: InsuranceSummaryData? = null,
 ) {
   @Immutable
   data class ClaimStatusCardsData(

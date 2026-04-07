@@ -187,6 +187,9 @@ internal fun HedvigNavHost(
       navigateToHelpCenter = {
         navController.navigate(HelpCenterDestination)
       },
+      navigateToInsurances = {
+        navController.navigate(InsurancesDestination.Graph)
+      },
       navigateToClaimChat = {
         navController.navigate(
           ClaimChatDestination(
