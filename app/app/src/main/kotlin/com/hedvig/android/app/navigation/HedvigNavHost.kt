@@ -8,7 +8,9 @@ import androidx.media3.datasource.cache.SimpleCache
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptionsBuilder
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
+import androidx.navigation.navOptions
 import coil3.ImageLoader
 import com.benasher44.uuid.Uuid
 import com.hedvig.android.app.ui.HedvigAppState
@@ -188,7 +190,16 @@ internal fun HedvigNavHost(
         navController.navigate(HelpCenterDestination)
       },
       navigateToInsurances = {
-        navController.navigate(InsurancesDestination.Graph)
+        navController.navigate(
+          InsurancesDestination.Graph,
+          navOptions {
+            popUpTo(navController.graph.findStartDestination().id) {
+              saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+          },
+        )
       },
       navigateToClaimChat = {
         navController.navigate(
