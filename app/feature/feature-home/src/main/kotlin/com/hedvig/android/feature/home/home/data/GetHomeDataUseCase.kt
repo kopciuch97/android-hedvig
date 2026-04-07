@@ -84,6 +84,7 @@ internal class GetHomeDataUseCaseImpl(
       },
       featureManager.isFeatureEnabled(Feature.DISABLE_CHAT),
       featureManager.isFeatureEnabled(Feature.HELP_CENTER),
+      featureManager.isFeatureEnabled(Feature.INSURANCE_SUMMARY_CARD),
     ) {
       homeQueryDataResult,
       unreadMessageCountResult,
@@ -92,6 +93,7 @@ internal class GetHomeDataUseCaseImpl(
       travelBannerInfo,
       isChatDisabled,
       isHelpCenterEnabled,
+      isInsuranceSummaryCardEnabled,
       ->
       either {
         val homeQueryData: HomeQuery.Data = homeQueryDataResult.bind()
@@ -166,7 +168,7 @@ internal class GetHomeDataUseCaseImpl(
             )
           } ?: emptyList()
         val travelBannerInfo = travelBannerInfo.getOrNull()
-        val insuranceSummary = homeQueryData.toInsuranceSummary()
+        val insuranceSummary = if (isInsuranceSummaryCardEnabled) homeQueryData.toInsuranceSummary() else null
         HomeData(
           contractStatus = contractStatus,
           claimStatusCardsData = homeQueryData.claimStatusCards(),
@@ -268,7 +270,7 @@ internal class GetHomeDataUseCaseImpl(
   }
 }
 
-private fun HomeQuery.Data.toInsuranceSummary(): InsuranceSummaryData? {
+internal fun HomeQuery.Data.toInsuranceSummary(): InsuranceSummaryData? {
   val activeContracts = currentMember.activeContracts
   if (activeContracts.isEmpty()) return null
   val policies = activeContracts.map { contract ->
@@ -293,12 +295,14 @@ private fun HomeQuery.Data.claimStatusCards(): HomeData.ClaimStatusCardsData? {
   return HomeData.ClaimStatusCardsData(claimStatusCards.map(ClaimStatusCardUiState::fromClaimStatusCardsQuery))
 }
 
+@Immutable
 internal data class InsuranceSummaryData(
   val policies: List<PolicyInfo>,
   val monthlyCost: UiMoney?,
   val nextPaymentDate: LocalDate?,
 )
 
+@Immutable
 internal data class PolicyInfo(
   val displayName: String,
   val exposureDisplayName: String,
@@ -374,5 +378,29 @@ fun <T1, T2, T3, T4, T5, T6, T7, R> combine(
     args[4] as T5,
     args[5] as T6,
     args[6] as T7,
+  )
+}
+
+fun <T1, T2, T3, T4, T5, T6, T7, T8, R> combine(
+  flow: Flow<T1>,
+  flow2: Flow<T2>,
+  flow3: Flow<T3>,
+  flow4: Flow<T4>,
+  flow5: Flow<T5>,
+  flow6: Flow<T6>,
+  flow7: Flow<T7>,
+  flow8: Flow<T8>,
+  transform: suspend (T1, T2, T3, T4, T5, T6, T7, T8) -> R,
+): Flow<R> = combine(flow, flow2, flow3, flow4, flow5, flow6, flow7, flow8) { args: Array<*> ->
+  @Suppress("UNCHECKED_CAST")
+  transform(
+    args[0] as T1,
+    args[1] as T2,
+    args[2] as T3,
+    args[3] as T4,
+    args[4] as T5,
+    args[5] as T6,
+    args[6] as T7,
+    args[7] as T8,
   )
 }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.hedvig.android.core.uidata.UiCurrencyCode
 import com.hedvig.android.core.uidata.UiMoney
@@ -31,7 +33,14 @@ internal fun InsuranceSummaryCard(
   onViewDetailsClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  HedvigCard(modifier = modifier) {
+  val summaryDescription = buildString {
+    append("${data.policies.size} active insurance policies")
+    data.monthlyCost?.let { append(", monthly cost $it") }
+    data.nextPaymentDate?.let { append(", next payment ${formatPaymentDate(it)}") }
+  }
+  HedvigCard(
+    modifier = modifier.semantics { contentDescription = summaryDescription },
+  ) {
     Column(Modifier.padding(16.dp)) {
       Row(
         modifier = Modifier.fillMaxWidth(),

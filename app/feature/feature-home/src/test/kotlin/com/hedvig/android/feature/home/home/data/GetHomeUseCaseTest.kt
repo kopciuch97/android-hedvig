@@ -505,6 +505,7 @@ internal class GetHomeUseCaseTest {
         Feature.DISABLE_CHAT to false,
         Feature.HELP_CENTER to true,
         Feature.ENABLE_CLAIM_HISTORY to true,
+        Feature.INSURANCE_SUMMARY_CARD to true,
       ),
     )
     val getHomeDataUseCase = testUseCaseWithoutReminders(featureManager)
@@ -570,6 +571,7 @@ internal class GetHomeUseCaseTest {
         Feature.DISABLE_CHAT to chatIsKillSwitched,
         Feature.HELP_CENTER to helpCenterIsEnabled,
         Feature.ENABLE_CLAIM_HISTORY to true,
+        Feature.INSURANCE_SUMMARY_CARD to true,
       ),
     )
     val getHomeDataUseCase = testUseCaseWithoutReminders(featureManager)
@@ -638,6 +640,7 @@ internal class GetHomeUseCaseTest {
         Feature.DISABLE_CHAT to true,
         Feature.HELP_CENTER to helpCenterIsEnabled,
         Feature.ENABLE_CLAIM_HISTORY to true,
+        Feature.INSURANCE_SUMMARY_CARD to true,
       ),
     )
     val getHomeDataUseCase = testUseCaseWithoutReminders(featureManager)
@@ -680,6 +683,7 @@ internal class GetHomeUseCaseTest {
         Feature.DISABLE_CHAT to false,
         Feature.HELP_CENTER to true,
         Feature.ENABLE_CLAIM_HISTORY to true,
+        Feature.INSURANCE_SUMMARY_CARD to true,
       ),
     )
     val getHomeDataUseCase = testUseCaseWithoutReminders(featureManager)
