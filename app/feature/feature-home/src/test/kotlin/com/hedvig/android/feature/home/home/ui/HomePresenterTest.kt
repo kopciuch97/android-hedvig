@@ -555,13 +555,7 @@ internal class HomePresenterTest {
   @Test
   fun `HomeData with non-null insuranceSummary results in Success with matching insuranceSummaryData`() = runTest {
     val getHomeDataUseCase = TestGetHomeDataUseCase()
-    val homePresenter = HomePresenter(
-      { getHomeDataUseCase },
-      SeenImportantMessagesStorageImpl(),
-      { FakeCrossSellHomeNotificationService() },
-      backgroundScope,
-      false,
-    )
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
     val insuranceSummary = InsuranceSummaryData(
       policies = listOf(
         PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
@@ -587,13 +581,7 @@ internal class HomePresenterTest {
   @Test
   fun `HomeData with null insuranceSummary results in Success with null insuranceSummaryData`() = runTest {
     val getHomeDataUseCase = TestGetHomeDataUseCase()
-    val homePresenter = HomePresenter(
-      { getHomeDataUseCase },
-      SeenImportantMessagesStorageImpl(),
-      { FakeCrossSellHomeNotificationService() },
-      backgroundScope,
-      false,
-    )
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
 
     homePresenter.test(HomeUiState.Loading) {
       assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
@@ -611,13 +599,7 @@ internal class HomePresenterTest {
   @Test
   fun `after error then success refresh, insuranceSummaryData is correctly populated from new data`() = runTest {
     val getHomeDataUseCase = TestGetHomeDataUseCase()
-    val homePresenter = HomePresenter(
-      { getHomeDataUseCase },
-      SeenImportantMessagesStorageImpl(),
-      { FakeCrossSellHomeNotificationService() },
-      backgroundScope,
-      false,
-    )
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
     val insuranceSummary = InsuranceSummaryData(
       policies = listOf(
         PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
@@ -648,13 +630,7 @@ internal class HomePresenterTest {
   @Test
   fun `fromLastState preserves insuranceSummaryData when transitioning from Success to reloading Success`() = runTest {
     val getHomeDataUseCase = TestGetHomeDataUseCase()
-    val homePresenter = HomePresenter(
-      { getHomeDataUseCase },
-      SeenImportantMessagesStorageImpl(),
-      { FakeCrossSellHomeNotificationService() },
-      backgroundScope,
-      false,
-    )
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
     val insuranceSummary = InsuranceSummaryData(
       policies = listOf(
         PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
@@ -675,9 +651,7 @@ internal class HomePresenterTest {
         .prop(HomeUiState.Success::insuranceSummaryData)
         .isEqualTo(insuranceSummary)
 
-      // Trigger refresh, which will cause reloading
       sendEvent(HomeEvent.RefreshData)
-      // The next emission while reloading should still have the insuranceSummaryData from the previous success
       assertThat(awaitItem())
         .isInstanceOf<HomeUiState.Success>()
         .apply {
@@ -685,7 +659,6 @@ internal class HomePresenterTest {
           prop(HomeUiState.Success::insuranceSummaryData).isEqualTo(insuranceSummary)
         }
 
-      // New data arrives with updated insurance summary
       val updatedSummary = insuranceSummary.copy(
         monthlyCost = UiMoney(399.0, UiCurrencyCode.SEK),
       )
@@ -704,13 +677,7 @@ internal class HomePresenterTest {
   @Test
   fun `error after success clears insuranceSummaryData and shows error state`() = runTest {
     val getHomeDataUseCase = TestGetHomeDataUseCase()
-    val homePresenter = HomePresenter(
-      { getHomeDataUseCase },
-      SeenImportantMessagesStorageImpl(),
-      { FakeCrossSellHomeNotificationService() },
-      backgroundScope,
-      false,
-    )
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
     val insuranceSummary = InsuranceSummaryData(
       policies = listOf(
         PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
@@ -722,7 +689,6 @@ internal class HomePresenterTest {
     homePresenter.test(HomeUiState.Loading) {
       assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
 
-      // First: success with insurance data
       getHomeDataUseCase.responseTurbine.add(
         someIrrelevantHomeDataInstance.copy(insuranceSummary = insuranceSummary).right(),
       )
@@ -731,11 +697,21 @@ internal class HomePresenterTest {
         .prop(HomeUiState.Success::insuranceSummaryData)
         .isEqualTo(insuranceSummary)
 
-      // Then: error - should clear everything and show error, not carry over stale data
       getHomeDataUseCase.responseTurbine.add(ApolloOperationError.OperationError.Other("").left())
       assertThat(awaitItem()).isInstanceOf<HomeUiState.Error>()
     }
   }
+
+  private fun createTestHomePresenter(
+    getHomeDataUseCase: TestGetHomeDataUseCase,
+    backgroundScope: kotlinx.coroutines.CoroutineScope,
+  ): HomePresenter = HomePresenter(
+    { getHomeDataUseCase },
+    SeenImportantMessagesStorageImpl(),
+    { FakeCrossSellHomeNotificationService() },
+    backgroundScope,
+    false,
+  )
 
   private class TestGetHomeDataUseCase : GetHomeDataUseCase {
     val forceNetworkFetchTurbine = Turbine<Boolean>()
