@@ -14,12 +14,16 @@ import assertk.assertions.prop
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.hedvig.android.apollo.ApolloOperationError
+import com.hedvig.android.core.uidata.UiCurrencyCode
+import com.hedvig.android.core.uidata.UiMoney
 import com.hedvig.android.crosssells.CrossSellSheetData
 import com.hedvig.android.crosssells.RecommendedCrossSell
 import com.hedvig.android.data.contract.CrossSell
 import com.hedvig.android.data.contract.ImageAsset
 import com.hedvig.android.feature.home.home.data.GetHomeDataUseCase
 import com.hedvig.android.feature.home.home.data.HomeData
+import com.hedvig.android.feature.home.home.data.InsuranceSummaryData
+import com.hedvig.android.feature.home.home.data.PolicyInfo
 import com.hedvig.android.feature.home.home.data.SeenImportantMessagesStorageImpl
 import com.hedvig.android.memberreminders.MemberReminder
 import com.hedvig.android.memberreminders.MemberReminders
@@ -32,6 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -172,6 +177,7 @@ internal class HomePresenterTest {
           chatAction = HomeTopBarAction.ChatAction,
           hasUnseenChatMessages = false,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -223,6 +229,7 @@ internal class HomePresenterTest {
           firstVetAction = null,
           crossSellsAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -331,6 +338,7 @@ internal class HomePresenterTest {
           firstVetAction = null,
           crossSellsAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -385,6 +393,7 @@ internal class HomePresenterTest {
           firstVetAction = HomeTopBarAction.FirstVetAction(listOf(firstVet)),
           crossSellsAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -442,6 +451,7 @@ internal class HomePresenterTest {
               (true, 1L),
           ),
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -488,6 +498,7 @@ internal class HomePresenterTest {
           firstVetAction = null,
           crossSellsAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
@@ -534,11 +545,173 @@ internal class HomePresenterTest {
           firstVetAction = null,
           crossSellsAction = null,
           addonBannerInfo = null,
+          insuranceSummaryData = null,
           isProduction = false,
         ),
       )
     }
   }
+
+  @Test
+  fun `HomeData with non-null insuranceSummary results in Success with matching insuranceSummaryData`() = runTest {
+    val getHomeDataUseCase = TestGetHomeDataUseCase()
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
+    val insuranceSummary = InsuranceSummaryData(
+      policies = listOf(
+        PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
+        PolicyInfo(displayName = "Car Insurance", exposureDisplayName = "ABC 123"),
+      ),
+      monthlyCost = UiMoney(299.0, UiCurrencyCode.SEK),
+      nextPaymentDate = LocalDate(2026, 5, 1),
+    )
+
+    homePresenter.test(HomeUiState.Loading) {
+      assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
+
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = insuranceSummary).right(),
+      )
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .prop(HomeUiState.Success::insuranceSummaryData)
+        .isEqualTo(insuranceSummary)
+    }
+  }
+
+  @Test
+  fun `HomeData with null insuranceSummary results in Success with null insuranceSummaryData`() = runTest {
+    val getHomeDataUseCase = TestGetHomeDataUseCase()
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
+
+    homePresenter.test(HomeUiState.Loading) {
+      assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
+
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = null).right(),
+      )
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .prop(HomeUiState.Success::insuranceSummaryData)
+        .isEqualTo(null)
+    }
+  }
+
+  @Test
+  fun `after error then success refresh, insuranceSummaryData is correctly populated from new data`() = runTest {
+    val getHomeDataUseCase = TestGetHomeDataUseCase()
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
+    val insuranceSummary = InsuranceSummaryData(
+      policies = listOf(
+        PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
+      ),
+      monthlyCost = UiMoney(199.0, UiCurrencyCode.SEK),
+      nextPaymentDate = LocalDate(2026, 6, 15),
+    )
+
+    homePresenter.test(HomeUiState.Loading) {
+      assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
+
+      getHomeDataUseCase.responseTurbine.add(ApolloOperationError.OperationError.Other("").left())
+      assertThat(awaitItem()).isInstanceOf<HomeUiState.Error>()
+
+      sendEvent(HomeEvent.RefreshData)
+      assertThat(awaitItem()).isInstanceOf<HomeUiState.Loading>()
+
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = insuranceSummary).right(),
+      )
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .prop(HomeUiState.Success::insuranceSummaryData)
+        .isEqualTo(insuranceSummary)
+    }
+  }
+
+  @Test
+  fun `fromLastState preserves insuranceSummaryData when transitioning from Success to reloading Success`() = runTest {
+    val getHomeDataUseCase = TestGetHomeDataUseCase()
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
+    val insuranceSummary = InsuranceSummaryData(
+      policies = listOf(
+        PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
+      ),
+      monthlyCost = UiMoney(299.0, UiCurrencyCode.SEK),
+      nextPaymentDate = LocalDate(2026, 5, 1),
+    )
+
+    homePresenter.test(HomeUiState.Loading) {
+      assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
+
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = insuranceSummary).right(),
+      )
+      val successState = awaitItem()
+      assertThat(successState)
+        .isInstanceOf<HomeUiState.Success>()
+        .prop(HomeUiState.Success::insuranceSummaryData)
+        .isEqualTo(insuranceSummary)
+
+      sendEvent(HomeEvent.RefreshData)
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .apply {
+          prop(HomeUiState.Success::isReloading).isTrue()
+          prop(HomeUiState.Success::insuranceSummaryData).isEqualTo(insuranceSummary)
+        }
+
+      val updatedSummary = insuranceSummary.copy(
+        monthlyCost = UiMoney(399.0, UiCurrencyCode.SEK),
+      )
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = updatedSummary).right(),
+      )
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .apply {
+          prop(HomeUiState.Success::isReloading).isFalse()
+          prop(HomeUiState.Success::insuranceSummaryData).isEqualTo(updatedSummary)
+        }
+    }
+  }
+
+  @Test
+  fun `error after success clears insuranceSummaryData and shows error state`() = runTest {
+    val getHomeDataUseCase = TestGetHomeDataUseCase()
+    val homePresenter = createTestHomePresenter(getHomeDataUseCase, backgroundScope)
+    val insuranceSummary = InsuranceSummaryData(
+      policies = listOf(
+        PolicyInfo(displayName = "Home Insurance", exposureDisplayName = "Bellmansgatan 5"),
+      ),
+      monthlyCost = UiMoney(299.0, UiCurrencyCode.SEK),
+      nextPaymentDate = LocalDate(2026, 5, 1),
+    )
+
+    homePresenter.test(HomeUiState.Loading) {
+      assertThat(awaitItem()).isEqualTo(HomeUiState.Loading)
+
+      getHomeDataUseCase.responseTurbine.add(
+        someIrrelevantHomeDataInstance.copy(insuranceSummary = insuranceSummary).right(),
+      )
+      assertThat(awaitItem())
+        .isInstanceOf<HomeUiState.Success>()
+        .prop(HomeUiState.Success::insuranceSummaryData)
+        .isEqualTo(insuranceSummary)
+
+      getHomeDataUseCase.responseTurbine.add(ApolloOperationError.OperationError.Other("").left())
+      assertThat(awaitItem()).isInstanceOf<HomeUiState.Error>()
+    }
+  }
+
+  private fun createTestHomePresenter(
+    getHomeDataUseCase: TestGetHomeDataUseCase,
+    backgroundScope: kotlinx.coroutines.CoroutineScope,
+  ): HomePresenter = HomePresenter(
+    { getHomeDataUseCase },
+    SeenImportantMessagesStorageImpl(),
+    { FakeCrossSellHomeNotificationService() },
+    backgroundScope,
+    false,
+  )
 
   private class TestGetHomeDataUseCase : GetHomeDataUseCase {
     val forceNetworkFetchTurbine = Turbine<Boolean>()

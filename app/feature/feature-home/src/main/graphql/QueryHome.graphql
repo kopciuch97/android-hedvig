@@ -56,8 +56,20 @@ query Home($claimsHistoryFlag: Boolean!) {
         }
       }
     }
+    futureCharge {
+      date
+      net {
+        ...MoneyFragment
+      }
+    }
     activeContracts {
       masterInceptionDate
+      exposureDisplayName
+      currentAgreement {
+        productVariant {
+          displayName
+        }
+      }
     }
   }
 }

@@ -22,4 +22,5 @@ enum class Feature(
   ),
   DISABLE_REDEEM_CAMPAIGN("Disables the ability to redeem a campaign code"),
   ENABLE_CLAIM_HISTORY("Disables the ability to redeem a campaign code"),
+  INSURANCE_SUMMARY_CARD("Shows the insurance summary card on the home screen"),
 }

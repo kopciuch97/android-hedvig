@@ -45,6 +45,7 @@ internal fun HomeLayout(
   fullScreenSize: IntSize,
   welcomeMessage: @Composable @UiComposable () -> Unit,
   claimStatusCards: @Composable @UiComposable () -> Unit,
+  insuranceSummaryCard: @Composable @UiComposable () -> Unit,
   veryImportantMessages: @Composable @UiComposable () -> Unit,
   memberReminderCards: @Composable @UiComposable () -> Unit,
   startClaimButton: @Composable @UiComposable () -> Unit,
@@ -57,6 +58,7 @@ internal fun HomeLayout(
     content = {
       Box(Modifier.layoutId(HomeLayoutContent.WelcomeMessage)) { welcomeMessage() }
       Box(Modifier.layoutId(HomeLayoutContent.ClaimStatusCards)) { claimStatusCards() }
+      Box(Modifier.layoutId(HomeLayoutContent.InsuranceSummaryCard)) { insuranceSummaryCard() }
       Box(Modifier.layoutId(HomeLayoutContent.VeryImportantMessages)) { veryImportantMessages() }
       Box(Modifier.layoutId(HomeLayoutContent.MemberReminderCards)) { memberReminderCards() }
       Box(Modifier.layoutId(HomeLayoutContent.StartClaimButton)) { startClaimButton() }
@@ -75,6 +77,8 @@ internal fun HomeLayout(
       measurables.fastFirstOrNull { it.layoutId == HomeLayoutContent.WelcomeMessage }!!.measure(constraints)
     val claimStatusCardsPlaceable: Placeable =
       measurables.fastFirstOrNull { it.layoutId == HomeLayoutContent.ClaimStatusCards }!!.measure(constraints)
+    val insuranceSummaryCardPlaceable: Placeable =
+      measurables.fastFirstOrNull { it.layoutId == HomeLayoutContent.InsuranceSummaryCard }!!.measure(constraints)
     val veryImportantMessagesPlaceable: Placeable =
       measurables.fastFirstOrNull { it.layoutId == HomeLayoutContent.VeryImportantMessages }!!.measure(constraints)
     val memberReminderCardsPlaceable: Placeable =
@@ -89,6 +93,10 @@ internal fun HomeLayout(
       if (claimStatusCardsPlaceable.height > 0) {
         add(FixedSizePlaceable(0, 24.dp.roundToPx()))
         add(claimStatusCardsPlaceable)
+      }
+      if (insuranceSummaryCardPlaceable.height > 0) {
+        add(FixedSizePlaceable(0, 24.dp.roundToPx()))
+        add(insuranceSummaryCardPlaceable)
       }
     }
 
@@ -179,6 +187,7 @@ private fun Placeable.PlacementScope.placeAsColumn(
 private enum class HomeLayoutContent {
   WelcomeMessage,
   ClaimStatusCards,
+  InsuranceSummaryCard,
   MemberReminderCards,
   StartClaimButton,
   HelpCenterButton,
@@ -303,6 +312,7 @@ private fun PreviewHomeLayout(
   maxHeight: Int,
   modifier: Modifier = Modifier,
   claimStatusCards: @Composable @UiComposable () -> Unit = {},
+  insuranceSummaryCard: @Composable @UiComposable () -> Unit = {},
   veryImportantMessages: @Composable @UiComposable () -> Unit = {},
   memberReminderCards: @Composable @UiComposable () -> Unit = {},
 ) {
@@ -317,6 +327,7 @@ private fun PreviewHomeLayout(
       )
     },
     claimStatusCards = claimStatusCards,
+    insuranceSummaryCard = insuranceSummaryCard,
     veryImportantMessages = veryImportantMessages,
     memberReminderCards = memberReminderCards,
     startClaimButton = {

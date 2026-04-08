@@ -37,6 +37,8 @@ internal class UnleashFeatureFlagProvider(
           Feature.DISABLE_REDEEM_CAMPAIGN -> hedvigUnleashClient.client.isEnabled("disable_redeem_campaign", false)
 
           Feature.ENABLE_CLAIM_HISTORY -> hedvigUnleashClient.client.isEnabled("enable_claim_history", false)
+
+          Feature.INSURANCE_SUMMARY_CARD -> hedvigUnleashClient.client.isEnabled("insurance_summary_card", false)
         }
       }.distinctUntilChanged()
   }
