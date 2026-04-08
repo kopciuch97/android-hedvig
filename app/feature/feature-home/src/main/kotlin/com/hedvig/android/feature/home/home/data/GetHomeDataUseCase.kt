@@ -270,7 +270,7 @@ internal class GetHomeDataUseCaseImpl(
   }
 }
 
-internal fun HomeQuery.Data.toInsuranceSummary(): InsuranceSummaryData? {
+private fun HomeQuery.Data.toInsuranceSummary(): InsuranceSummaryData? {
   val activeContracts = currentMember.activeContracts
   if (activeContracts.isEmpty()) return null
   val policies = activeContracts.map { contract ->

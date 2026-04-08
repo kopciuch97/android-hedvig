@@ -48,12 +48,12 @@ internal fun InsuranceSummaryCard(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         HedvigText(
-          text = "Your Insurance",
+          text = "Your Insurance", // TODO: Replace with Lokalise key (hedvig_home_insurance_summary_title)
           style = HedvigTheme.typography.headlineMedium,
           color = HedvigTheme.colorScheme.textPrimary,
         )
         HedvigText(
-          text = "${data.policies.size} Active",
+          text = "${data.policies.size} Active", // TODO: Replace with Lokalise key (hedvig_home_insurance_summary_active_count)
           style = HedvigTheme.typography.label,
           color = HedvigTheme.colorScheme.textSecondary,
         )
@@ -86,13 +86,13 @@ internal fun InsuranceSummaryCard(
           verticalAlignment = Alignment.CenterVertically,
         ) {
           HedvigText(
-            text = "${data.monthlyCost}/mo",
+            text = "${data.monthlyCost}/mo", // TODO: Replace with Lokalise key (hedvig_home_insurance_summary_monthly_cost)
             style = HedvigTheme.typography.bodyMedium,
             color = HedvigTheme.colorScheme.textPrimary,
           )
           if (data.nextPaymentDate != null) {
             HedvigText(
-              text = "Next payment: ${formatPaymentDate(data.nextPaymentDate)}",
+              text = "Next payment: ${formatPaymentDate(data.nextPaymentDate)}", // TODO: Replace with Lokalise key (hedvig_home_insurance_summary_next_payment)
               style = HedvigTheme.typography.bodySmall,
               color = HedvigTheme.colorScheme.textSecondary,
             )
@@ -103,7 +103,7 @@ internal fun InsuranceSummaryCard(
       HorizontalDivider()
       Spacer(Modifier.height(8.dp))
       HedvigTextButton(
-        text = "View details",
+        text = "View details", // TODO: Replace with Lokalise key (hedvig_home_insurance_summary_view_details)
         onClick = onViewDetailsClick,
         buttonSize = Large,
         modifier = Modifier.fillMaxWidth(),
@@ -112,6 +112,7 @@ internal fun InsuranceSummaryCard(
   }
 }
 
+// TODO: Use locale-aware formatting — date.month.name gives English month names but Hedvig serves SE/NO/DK
 private fun formatPaymentDate(date: LocalDate): String {
   val day = date.day
   val month = date.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }

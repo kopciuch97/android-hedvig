@@ -1029,6 +1029,60 @@ internal class GetHomeUseCaseTest {
       }
   }
 
+  @Test
+  fun `insurance summary card feature flag disabled results in null insuranceSummary even with active contracts`() =
+    runTest {
+      val featureManager = FakeFeatureManager(
+        mapOf(
+          Feature.DISABLE_CHAT to false,
+          Feature.HELP_CENTER to true,
+          Feature.ENABLE_CLAIM_HISTORY to true,
+          Feature.INSURANCE_SUMMARY_CARD to false,
+        ),
+      )
+      val getHomeDataUseCase = testUseCaseWithoutReminders(featureManager)
+
+      apolloClient.registerTestResponse(
+        HomeQuery(true),
+        HomeQuery.Data(OctopusFakeResolver) {
+          currentMember = buildMember {
+            activeContracts = listOf(
+              buildContract {
+                exposureDisplayName = "Kungsgatan 1"
+                currentAgreement = buildAgreement {
+                  productVariant = buildProductVariant {
+                    displayName = "Home Insurance"
+                  }
+                }
+              },
+            )
+            futureCharge = buildMemberCharge {
+              net = buildMoney {
+                amount = 199.0
+                currencyCode = CurrencyCode.SEK
+              }
+              date = LocalDate(2026, 5, 1)
+            }
+          }
+        },
+      )
+      apolloClient.registerTestResponse(
+        UnreadMessageCountQuery(),
+        UnreadMessageCountQuery.Data(OctopusFakeResolver),
+      )
+      apolloClient.registerTestResponse(
+        CbmNumberOfChatMessagesQuery(),
+        CbmNumberOfChatMessagesQuery.Data(OctopusFakeResolver),
+      )
+      val result = getHomeDataUseCase.invoke(true).first()
+
+      assertThat(result)
+        .isNotNull()
+        .isRight()
+        .prop(HomeData::insuranceSummary)
+        .isNull()
+    }
+
   // Used as a convenience to get a use case without any enqueued apollo responses, but some sane defaults for the
   // other dependencies
   private fun testUseCaseWithoutReminders(

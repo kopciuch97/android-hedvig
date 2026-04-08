@@ -24,8 +24,8 @@
 ## Group 1 Complete
 
 **Steps**: 1.1-1.5 completed
-**Tests**: 3 passed (InsuranceSummaryDataTest)
-**Files Modified**: InsuranceSummaryDataTest.kt (created), build.gradle.kts, GetHomeDataUseCase.kt, QueryHome.graphql, GetHomeDataUseCaseDemo.kt
+**Tests**: 3 passed (domain model mapping tests in GetHomeUseCaseTest)
+**Files Modified**: build.gradle.kts, GetHomeDataUseCase.kt, QueryHome.graphql, GetHomeDataUseCaseDemo.kt
 **No regressions**: All existing GetHomeUseCaseTest tests pass
 
 ## Group 2 Complete
@@ -67,5 +67,5 @@
 **Total Standards**: 8 applied (coding-style, conventions, error-handling, test-writing, minimal-implementation, components, accessibility, commenting)
 **Test Suite**: 60 feature-home tests pass (13 new for insurance summary), 0 failures
 **Build Health**: feature-home:testDebugUnitTest PASS, feature-home:ktlintCheck PASS
-**Files Created**: 2 (InsuranceSummaryCard.kt, InsuranceSummaryDataTest.kt)
+**Files Created**: 1 (InsuranceSummaryCard.kt)
 **Files Modified**: 8 (QueryHome.graphql, GetHomeDataUseCase.kt, GetHomeDataUseCaseDemo.kt, HomePresenter.kt, HomeLayout.kt, HomeDestination.kt, HomeGraph.kt, HedvigNavHost.kt, build.gradle.kts, GetHomeUseCaseTest.kt, HomePresenterTest.kt)
